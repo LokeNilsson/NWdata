@@ -31,10 +31,10 @@ def load_data():
         dataset_type = "Full Dataset (Local)"
         with open(full_filepath, "r", encoding="utf-8") as f:
             competitions_data = json.load(f)
-    elif os.path.exists(sample_filepath):
-        dataset_type = "Sample Dataset (50 competitions)"
-        with open(sample_filepath, "r", encoding="utf-8") as f:
-            competitions_data = json.load(f)
+    # elif os.path.exists(sample_filepath):
+    #     dataset_type = "Sample Dataset (50 competitions)"
+    #     with open(sample_filepath, "r", encoding="utf-8") as f:
+    #         competitions_data = json.load(f)
     else:
         # Try to download from GitHub Releases
         try:
