@@ -101,10 +101,10 @@ def load_data():
 
         return pd.DataFrame(participants_list)
 
-    return create_participants_dataframe(competitions_data)
+    return create_participants_dataframe(competitions_data), dataset_type
 
 # Load the data
-df_participants = load_data()
+df_participants, dataset_type = load_data()
 
 # Simple Streamlit test with your competition data
 st.title("🐕 Statistik För NoseWork Sök 🐕")
@@ -112,7 +112,7 @@ st.write("En sammanställning av statistik från alla nosework sök registrerade
         "Datan består av sök inom TSM/TEM -  NW1, NW2, NW3")
 
 # Add data info
-if "sample" in st.session_state.get('dataset_type', 'sample').lower():
+if "Sample" in dataset_type:
     st.info("📋 **Note**: This online version uses a sample dataset (50 competitions) for demonstration. " \
             "For the complete dataset with all competitions, run the application locally.")
 

@@ -43,7 +43,7 @@ class Config:
     DATA_DIR = ProjectPaths.DATA
     
     REQUEST_HEADERS = {
-        "User-Agent": "snwk-statistics-scraper loke@snowcrash.nu",
+        "User-Agent": "snwk-statistics-scraper/1.0 ",
         "X-Requested-With": "XMLHttpRequest",
         "Referer": BASE_URL,
         "Accept": "application/json, text/javascript, */*; q=0.01",
