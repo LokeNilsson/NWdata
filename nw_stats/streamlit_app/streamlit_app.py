@@ -170,19 +170,21 @@ fig_points = px.histogram(
 st.plotly_chart(fig_points, use_container_width=True)
 
 # Top performing dogs (by average points)
-if len(filtered_df) > 10:
+if len(filtered_df) > 0:
     top_dogs = filtered_df.groupby('stamtavlenamn')['poäng'].agg(['mean', 'count']).reset_index()
-    top_dogs = top_dogs[top_dogs['count'] >= 10]  # At least 3 competitions
+    top_dogs = top_dogs[top_dogs['count'] >= 10]  # At least 10 competitions
     top_dogs = top_dogs.sort_values('mean', ascending=False).head(10)
+    
+    if len(top_dogs) > 0:
+        fig_top_dogs = px.bar(
+            top_dogs, 
+            x='stamtavlenamn', 
+            y='mean',
+            title='Top 10 Hundar per genomsnittlig poäng (min 10 competitions)',
+            labels={'mean': 'Average Points', 'stamtavlenamn': 'Dog Name'}
+        )
+        st.plotly_chart(fig_top_dogs, use_container_width=True)
 
-    fig_top_dogs = px.bar(
-        top_dogs, 
-        x='stamtavlenamn', 
-        y='mean',
-        title='Top 10 Hundar per genomsnittlig poäng (min 10 competitions)',
-        labels={'mean': 'Average Points', 'stamtavlenamn': 'Dog Name'}
-    )
-    st.plotly_chart(fig_top_dogs, use_container_width=True)
 
 
 # Sample specific dog analysis
