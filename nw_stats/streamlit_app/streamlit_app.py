@@ -17,7 +17,7 @@ dataset_link = "https://github.com/LokeNilsson/NWdata/releases/download/v1.0.0/s
 
 
 # Load data
-@st.cache_data
+@st.cache_data(show_spinner=False)
 def load_data():
     # Try to load full dataset first, then fallback to sample for online deployment
     full_filename = "snwk_competition_results_20251008_050303.json"
@@ -122,18 +122,18 @@ def load_data():
     return create_participants_dataframe(competitions_data), dataset_type
 
 # Load the data
-df_participants, dataset_type = load_data()
+with st.spinner(""):  # Empty spinner to override default
+    df_participants, dataset_type = load_data()
 
 # Simple Streamlit test with your competition data
 st.title("🐕 Statistik För NoseWork Sök 🐕")
-st.write("En sammanställning av statistik från alla nosework sök registrerade hos SWNK. " \
-        "Datan består av sök inom TSM/TEM -  NW1, NW2, NW3")
+st.write("En sammanställning av statistik från alla nosework sök registrerade hos SWNK. ")
 
 # Add data info
 if "Sample" in dataset_type:
-    st.info("📋 **Online Demo**: Using sample dataset (50 competitions). For complete data with all competitions, download and run locally.")
+    st.info(" **Online Demo**: Using sample dataset (50 competitions). For complete data with all competitions, download and run locally.")
 elif "GitHub Releases" in dataset_type:
-    st.info("🚀 **Full Dataset**: Complete dataset loaded from GitHub Releases!")
+    st.info(" **Full Dataset**: Complete dataset loaded from GitHub Releases!")
 
 # Basic data overview
 st.header(" Översikt av data ")
@@ -165,6 +165,20 @@ selected_class = st.sidebar.selectbox(
     ['All'] + list(df_participants['klass'].unique())
 )
 
+# Author info in sidebar
+st.sidebar.markdown("---")
+st.sidebar.markdown("""
+**Skapad av:** Loke Nilsson  
+                    
+**Data hämtat från:** SNWK (Svenska Nosework Klubben)  
+                    
+**Senast uppdaterad:**  2025-10-07
+
+**Frågor eller feedback?**   
+📧 Loke@snowcrash.nu
+""")
+
+
 # Apply filters
 filtered_df = df_participants.copy()
 if selected_comp_type != 'All':
@@ -177,7 +191,7 @@ if selected_class != 'All':
 
 
 # Charts
-st.header(f"📈 Statistik Enligt Filter ({len(filtered_df)} sök)")
+st.header(f" Statistik Enligt Filter ({len(filtered_df)} sök)")
 
 # Points distribution
 fig_points = px.histogram(
@@ -239,3 +253,13 @@ if dog_name:
     st.write(f"Senaste {searches_to_show} Sök:")
     recent_comps = dog_data.sort_values('datum', ascending=False).head(searches_to_show)
     st.dataframe(recent_comps[['datum', 'plats', 'typ_av_sök', 'poäng', 'placering']], use_container_width=True)
+
+# Footer
+st.markdown("---")
+st.markdown("""
+<div style='text-align: center; color: #666; padding: 20px;'>
+    <p><strong>NoseWork Statistik Portal</strong></p>
+    <p>Skapad av <strong>Loke Nilsson</strong> | Data från <a href="https://www.snwktavling.se/" target="_blank">SNWK</a></p>
+    <p> Analyserar svenska nosework tävlingsresultat |  <a href="https://github.com/LokeNilsson/NWdata" target="_blank">Öppen källkod på GitHub</a></p>
+</div>
+""", unsafe_allow_html=True)
