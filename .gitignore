@@ -168,10 +168,10 @@ cython_debug/
 # Project-specific data files
 # Large data files (over 100MB limit for GitHub)
 data/snwk_competition_results_*.json
-data/snwk_*_results_*.json
 
-# Keep smaller metadata files
+# Keep smaller metadata files and sample data
 !data/snwk_new_subpages_*.json
+!data/sample_*.json
 
 # Temporary files
 *.tmp

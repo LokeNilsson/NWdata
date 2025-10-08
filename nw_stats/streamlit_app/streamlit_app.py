@@ -15,8 +15,26 @@ import os
 # Load data
 @st.cache_data
 def load_data():
-    filename = "snwk_competition_results_20251008_050303.json" 
-    filepath = os.path.join(ProjectPaths.DATA, filename)
+    # Try to load full dataset first, fallback to sample for online deployment
+    full_filename = "snwk_competition_results_20251008_050303.json"
+    sample_filename = "sample_competition_results.json"
+    
+    full_filepath = os.path.join(ProjectPaths.DATA, full_filename)
+    sample_filepath = os.path.join(ProjectPaths.DATA, sample_filename)
+    
+    # Check which file exists and use it
+    if os.path.exists(full_filepath):
+        filepath = full_filepath
+        dataset_type = "Full Dataset"
+    elif os.path.exists(sample_filepath):
+        filepath = sample_filepath
+        dataset_type = "Sample Dataset (50 competitions)"
+    else:
+        st.error("No data files found! Please ensure data files are available.")
+        st.stop()
+    
+    # Display which dataset is being used
+    st.sidebar.info(f"Using: {dataset_type}")
 
     with open(filepath, "r", encoding="utf-8") as f:
         competitions_data = json.load(f)
@@ -92,6 +110,11 @@ df_participants = load_data()
 st.title("🐕 Statistik För NoseWork Sök 🐕")
 st.write("En sammanställning av statistik från alla nosework sök registrerade hos SWNK. " \
         "Datan består av sök inom TSM/TEM -  NW1, NW2, NW3")
+
+# Add data info
+if "sample" in st.session_state.get('dataset_type', 'sample').lower():
+    st.info("📋 **Note**: This online version uses a sample dataset (50 competitions) for demonstration. " \
+            "For the complete dataset with all competitions, run the application locally.")
 
 # Basic data overview
 st.header(" Översikt av data ")
