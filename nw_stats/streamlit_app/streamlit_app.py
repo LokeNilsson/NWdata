@@ -13,33 +13,41 @@ sys.path.insert(0, str(project_root))
 from nw_stats.config import ProjectPaths
 import os
 
-google_drive_link = "https://drive.google.com/uc?export=download&id=1oo4aY58zMnbKKJDZX5YKK_e17zWpiw62"
+dataset_link = "https://github.com/LokeNilsson/NWdata/releases/download/v1.0.0/snwk_competition_results_20251008_050303.json"
 
 
 # Load data
 @st.cache_data
 def load_data():
-    # Try to load full dataset first, then fallback to Google Drive for online deployment
+    # Try to load full dataset first, then fallback to sample for online deployment
     full_filename = "snwk_competition_results_20251008_050303.json"
-    full_filepath = os.path.join(ProjectPaths.DATA, full_filename)
+    sample_filename = "sample_competition_results.json"
     
-    # Check if local file exists
+    full_filepath = os.path.join(ProjectPaths.DATA, full_filename)
+    sample_filepath = os.path.join(ProjectPaths.DATA, sample_filename)
+    
+    # Check if local file exists (for local development)
     if os.path.exists(full_filepath):
         dataset_type = "Full Dataset (Local)"
         with open(full_filepath, "r", encoding="utf-8") as f:
             competitions_data = json.load(f)
+    elif os.path.exists(sample_filepath):
+        dataset_type = "Sample Dataset (50 competitions)"
+        with open(sample_filepath, "r", encoding="utf-8") as f:
+            competitions_data = json.load(f)
     else:
-        # Download from Google Drive
+        # Try to download from GitHub Releases
         try:
-            st.info(" Laddar ner fullständig dataset från Google Drive...")
-            response = requests.get(google_drive_link, timeout=60)
+            st.info("📥 Laddar ner fullständig dataset från GitHub Releases...")
+            response = requests.get(dataset_link, timeout=120)
             response.raise_for_status()
             competitions_data = response.json()
-            dataset_type = "Full Dataset (Google Drive)"
-            st.success(" Dataset framgångsrikt nedladdat från Google Drive!")
+            dataset_type = "Full Dataset (GitHub Releases)"
+            st.success("✅ Dataset framgångsrikt nedladdat från GitHub!")
         except Exception as e:
-            st.error(f" Kunde inte ladda data från Google Drive: {str(e)}")
-            st.error("Ingen data tillgänglig! Kontrollera att datafiler finns tillgängliga.")
+            st.error(f"❌ Kunde inte ladda data från GitHub Releases: {str(e)}")
+            st.error("För lokal användning: se till att din dataset-fil finns i data-mappen.")
+            st.error("För online-deployment: kontrollera GitHub Release med dataset-filen.")
             st.stop()
     
     # Display which dataset is being used
@@ -118,8 +126,10 @@ st.write("En sammanställning av statistik från alla nosework sök registrerade
         "Datan består av sök inom TSM/TEM -  NW1, NW2, NW3")
 
 # Add data info
-if "Google Drive" in dataset_type:
-    st.info("🌐 **Info**: Full dataset loaded from Google Drive for online deployment.")
+if "Sample" in dataset_type:
+    st.info("📋 **Online Demo**: Using sample dataset (50 competitions). For complete data with all competitions, download and run locally.")
+elif "GitHub Releases" in dataset_type:
+    st.info("🚀 **Full Dataset**: Complete dataset loaded from GitHub Releases!")
 
 # Basic data overview
 st.header(" Översikt av data ")
