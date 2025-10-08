@@ -166,9 +166,12 @@ cython_debug/
 .streamlit/
 
 # Project-specific data files
-# Uncomment if you don't want to track scraped data
-# data/*.json
-# data/snwk_*.json
+# Large data files (over 100MB limit for GitHub)
+data/snwk_competition_results_*.json
+data/snwk_*_results_*.json
+
+# Keep smaller metadata files
+!data/snwk_new_subpages_*.json
 
 # Temporary files
 *.tmp
