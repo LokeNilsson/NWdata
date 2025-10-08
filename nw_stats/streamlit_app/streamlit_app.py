@@ -170,7 +170,7 @@ fig_points = px.histogram(
 st.plotly_chart(fig_points, use_container_width=True)
 
 # Top performing dogs (by average points)
-if len(filtered_df) > 0:
+if len(filtered_df) > 10:
     top_dogs = filtered_df.groupby('stamtavlenamn')['poäng'].agg(['mean', 'count']).reset_index()
     top_dogs = top_dogs[top_dogs['count'] >= 10]  # At least 3 competitions
     top_dogs = top_dogs.sort_values('mean', ascending=False).head(10)
@@ -184,17 +184,19 @@ if len(filtered_df) > 0:
     )
     st.plotly_chart(fig_top_dogs, use_container_width=True)
 
-# # Data table
-# st.header("📋 Raw Data")
-# st.write("First 100 records:")
-# st.dataframe(filtered_df.head(100), use_container_width=True)
 
 # Sample specific dog analysis
-st.header("🔍 Statistik per Hund")
-dog_name = st.selectbox("Välj hund genom stamtavlenamn", df_participants['stamtavlenamn'].unique())
+st.header(" Statistik per Hund")
+dog_name = st.selectbox("Välj hund genom stamtavlenamn", filtered_df['stamtavlenamn'].unique())
+
+dog_df = df_participants.copy()
+if selected_comp_type != 'All':
+    dog_df = dog_df[dog_df['typ'] == selected_comp_type]
+if selected_class != 'All':
+    dog_df = dog_df[dog_df['klass'] == selected_class]
 
 if dog_name:
-    dog_data = df_participants[df_participants['stamtavlenamn'] == dog_name]
+    dog_data = dog_df[dog_df['stamtavlenamn'] == dog_name]
 
     st.write(f"**{dog_name}** har genomfört {len(dog_data)} sök")
 
