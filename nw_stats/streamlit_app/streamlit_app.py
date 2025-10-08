@@ -38,20 +38,24 @@ def load_data():
     else:
         # Try to download from GitHub Releases
         try:
-            st.info("📥 Laddar ner fullständig dataset från GitHub Releases...")
+            # Create a placeholder for temporary messages
+            status_placeholder = st.empty()
+            status_placeholder.info(" Laddar ner fullständig dataset från GitHub Releases...")
+            
             response = requests.get(dataset_link, timeout=120)
             response.raise_for_status()
             competitions_data = response.json()
             dataset_type = "Full Dataset (GitHub Releases)"
-            st.success("✅ Dataset framgångsrikt nedladdat från GitHub!")
+            
+            # Clear the loading message and show brief success
+            status_placeholder.empty()
+            
         except Exception as e:
-            st.error(f"❌ Kunde inte ladda data från GitHub Releases: {str(e)}")
+            st.error(f" Kunde inte ladda data från GitHub Releases: {str(e)}")
             st.error("För lokal användning: se till att din dataset-fil finns i data-mappen.")
             st.error("För online-deployment: kontrollera GitHub Release med dataset-filen.")
             st.stop()
     
-    # Display which dataset is being used
-    st.sidebar.info(f"Using: {dataset_type}")
 
     # Transform to dataframe (copy the function from your notebook)
     def convert_time_to_seconds(time_str):
