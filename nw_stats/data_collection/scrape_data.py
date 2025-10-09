@@ -384,20 +384,50 @@ def parse_competition_results(comp_dict: Dict, headers: Optional[Dict] = None) -
                 ref_div = soup.find("div", class_="domardiv")
                 if ref_div:
                     text_list = ref_div.get_text().split()
-                    if len(text_list) == 4:  # One ref
+                    
+                    # Handle different formats
+                    if len(text_list) == 4:  # Simple format: "Domare Förnamn Efternamn"
                         result_dict['domare'] = [f"{text_list[-2]} {text_list[-1]}"]
-                    elif len(text_list) == 8:  # Two refs
+                    elif len(text_list) == 8:  # Two refs, simple format
                         result_dict['domare'] = [f"{text_list[2]} {text_list[3]}", f"{text_list[6]} {text_list[7]}"]
-                    elif len(text_list) == 12:  # Three refs
+                    elif len(text_list) == 12:  # Three refs, simple format
                         result_dict['domare'] = [f"{text_list[2]} {text_list[3]}", f"{text_list[6]} {text_list[7]}", f"{text_list[-2]} {text_list[-1]}"]
+                    elif len(text_list) == 9:  # Two refs with numbered format: "Domare 1: Name Name Domare 2: Name Name"
+                        result_dict['domare'] = [f"{text_list[2]} {text_list[3]}", f"{text_list[6]} {text_list[7]}"]
+                    elif len(text_list) == 13:  # Three refs with numbered format
+                        result_dict['domare'] = [f"{text_list[2]} {text_list[3]}", f"{text_list[6]} {text_list[7]}", f"{text_list[10]} {text_list[11]}"]
                     else:
-                        result_dict['domare'] = ["okänd"]
+                        # Try to extract judge names using regex for more flexible parsing
+                        import re
+                        judge_text = ref_div.get_text()
+                        # Pattern to match judge names after "Domare X:" or similar
+                        # Look for sequences like "Domare 1: Firstname Lastname"
+                        judge_pattern = r"Domare\s*\d*\s*:\s*([A-ZÅÄÖ][\w\-\s]+?)(?=\s*(?:Domare\s*\d*\s*:|$))"
+                        matches = re.findall(judge_pattern, judge_text, re.IGNORECASE)
+                        if matches:
+                            # Clean up the matches (remove extra whitespace)
+                            result_dict['domare'] = [match.strip() for match in matches]
+                        else:
+                            # Log the unexpected format for debugging
+                            print(f"Warning: Unexpected domardiv format with {len(text_list)} elements: {text_list}")
+                            print(f"Raw text: '{judge_text}'")
+                            result_dict['domare'] = ["okänd"]
+                else:
+                    # No domardiv found, set as unknown
+                    result_dict['domare'] = ["okänd"]
             else: 
                 p = soup.find("p", string=re.compile("Domare"))
                 if p:
                     match = re.search(r"Domare\s*[^:]*:\s*(.*)", p.get_text())
                     if match:
                         result_dict['domare'] = [match.group(1).strip()]
+                    else:
+                        # Found "Domare" paragraph but couldn't parse it
+                        print(f"Warning: Found Domare paragraph but couldn't parse: {p.get_text()}")
+                        result_dict['domare'] = ["okänd"]
+                else:
+                    # No Domare paragraph found, set as unknown
+                    result_dict['domare'] = ["okänd"]
             
             # Add results for this branch
             branch_results = []

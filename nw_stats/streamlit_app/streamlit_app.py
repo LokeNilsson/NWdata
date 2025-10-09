@@ -165,15 +165,22 @@ selected_class = st.sidebar.selectbox(
     ['All'] + list(df_participants['klass'].unique())
 )
 
+selected_ref = st.sidebar.selectbox(
+    "Domare:",
+    ['All'] + list(df_participants['domare'].unique())
+)
+
+selected_race = st.sidebar.selectbox(
+    "Hundras:",
+    ['All'] + list(df_participants['hundras'].unique())
+)
+
 # Author info in sidebar
 st.sidebar.markdown("---")
-st.sidebar.markdown("""
-**Skapad av:** Loke Nilsson  
-                    
+st.sidebar.markdown("""      
 **Data hämtat från:** SNWK (Svenska Nosework Klubben)  
-                    
 **Senast uppdaterad:**  2025-10-07
-
+**Skapad av:** Loke Nilsson  
 **Frågor eller feedback?**   
 📧 Loke@snowcrash.nu
 """)
@@ -189,6 +196,12 @@ filtered_df = filtered_df[filtered_df['typ_av_sök'] == selected_search_type]
 if selected_class != 'All':
     filtered_df = filtered_df[filtered_df['klass'] == selected_class]
 
+if selected_ref != 'All':
+    filtered_df = filtered_df[filtered_df['domare'] == selected_ref]
+
+if selected_race != 'All':
+    filtered_df = filtered_df[filtered_df['hundras'] == selected_race]
+
 
 # Charts
 st.header(f" Statistik Enligt Filter ({len(filtered_df)} sök)")
@@ -198,9 +211,113 @@ fig_points = px.histogram(
     filtered_df, 
     x = 'poäng', 
     title ='Poängdistribution',
-    nbins = 10
+    nbins = 10,
+    labels={'poäng': 'Poäng'}
 )
+fig_points.update_layout(yaxis_title="Antal Sök")
 st.plotly_chart(fig_points, use_container_width=True)
+
+# Errors Distribution
+fig_errors = px.histogram(
+    filtered_df, 
+    x = 'fel', 
+    title ='Feldistribution',
+    nbins = 10,
+    labels={'fel': 'Fel'}
+)
+fig_errors.update_layout(yaxis_title="Antal Sök")
+st.plotly_chart(fig_errors, use_container_width=True)
+
+# Time Distribution
+time_data = filtered_df[filtered_df['tid'].notna()].copy()
+time_data['tid_kategori'] = pd.cut(
+    time_data['tid'], 
+    bins=[0, 30, 60, 120, 300, float('inf')],
+    labels=['<30s', '30-60s', '1-2min', '2-5min', '>5min']
+)
+
+fig_time = px.histogram(
+    time_data,
+    x='tid_kategori',
+    title='Tidsdistribution',
+    labels={'tid_kategori': 'Tid'}
+)
+fig_time.update_layout(yaxis_title="Antal Sök")
+st.plotly_chart(fig_time, use_container_width=True)
+
+# Time vs Points Relationship (using binned heatmap for performance)
+time_points_data = filtered_df[(filtered_df['tid'].notna()) & (filtered_df['poäng'].notna())].copy()
+if len(time_points_data) > 0:
+    # Create time bins for better performance
+    time_points_data['tid_binned'] = pd.cut(
+        time_points_data['tid'], 
+        bins=10, 
+        precision=0
+    ).astype(str)
+    
+    # Create average points by time bin
+    time_summary = time_points_data.groupby('tid_binned')['poäng'].agg(['mean', 'count']).reset_index()
+    time_summary = time_summary[time_summary['count'] >= 5]  # Only bins with enough data
+    
+    fig_time_points = px.bar(
+        time_summary,
+        x='tid_binned',
+        y='mean',
+        title='Genomsnittlig Poäng per Tidskategori',
+        labels={'tid_binned': 'Tid (sekunder)', 'mean': 'Genomsnittlig Poäng'},
+        hover_data={'count': True}
+    )
+    fig_time_points.update_xaxes(tickangle=45)
+    st.plotly_chart(fig_time_points, use_container_width=True)
+
+# Start Position vs Placement Analysis
+placement_data = filtered_df[(filtered_df['start_position'].notna()) & 
+                           (filtered_df['placering'].notna())].copy()
+# Convert to numeric to ensure proper plotting
+placement_data['start_position'] = pd.to_numeric(placement_data['start_position'], errors='coerce')
+placement_data['placering'] = pd.to_numeric(placement_data['placering'], errors='coerce')
+placement_data = placement_data.dropna(subset=['start_position', 'placering'])
+
+# Start Position vs Placement Analysis (using binned averages for performance)
+placement_data = filtered_df[(filtered_df['start_position'].notna()) & 
+                           (filtered_df['placering'].notna())].copy()
+# Convert to numeric to ensure proper plotting
+placement_data['start_position'] = pd.to_numeric(placement_data['start_position'], errors='coerce')
+placement_data['placering'] = pd.to_numeric(placement_data['placering'], errors='coerce')
+placement_data = placement_data.dropna(subset=['start_position', 'placering'])
+
+if len(placement_data) > 0:
+    # Create start position bins for better performance
+    max_start = placement_data['start_position'].max()
+    bin_size = max(1, int(max_start / 10))  # Create ~10 bins
+    placement_data['start_binned'] = (
+        (placement_data['start_position'] - 1) // bin_size * bin_size + 1
+    ).astype(int)
+    
+    # Calculate average placement by start position bin
+    placement_summary = placement_data.groupby('start_binned').agg({
+        'placering': ['mean', 'count'],
+        'start_position': 'mean'
+    }).round(1)
+    
+    # Flatten column names
+    placement_summary.columns = ['avg_placement', 'count', 'avg_start_pos']
+    placement_summary = placement_summary.reset_index()
+    placement_summary = placement_summary[placement_summary['count'] >= 5]  # Only bins with enough data
+    
+    fig_position_placement = px.bar(
+        placement_summary,
+        x='start_binned',
+        y='avg_placement',
+        title='Genomsnittlig Slutplacering per Startposition',
+        labels={'start_binned': 'Startposition (grupp)', 'avg_placement': 'Genomsnittlig Slutplacering'},
+        hover_data={'count': True, 'avg_start_pos': True}
+    )
+    # Lower values are better, so we want bars pointing down to be good
+    st.plotly_chart(fig_position_placement, use_container_width=True)
+
+
+
 
 # Top performing dogs (by average points)
 if len(filtered_df) > 0:
@@ -214,11 +331,11 @@ if len(filtered_df) > 0:
             x='stamtavlenamn', 
             y='mean',
             title='Top 10 Hundar per genomsnittlig poäng (min 10 competitions)',
-            labels={'mean': 'Average Points', 'stamtavlenamn': 'Dog Name'}
+            labels={'mean': 'Genomsnittlig Poäng', 'stamtavlenamn': 'Stamtavlenamn'}
         )
         st.plotly_chart(fig_top_dogs, use_container_width=True)
     else:
-        st.info("📊 Ingen data för topp-hundar: Inga hundar har minst 10 tävlingar med nuvarande filter.")
+        st.info(" Ingen data för topp-hundar: Inga hundar har minst 10 tävlingar med nuvarande filter.")
 
 
 
